@@ -7,7 +7,9 @@ import {
 } from "expo-router";
 import { useEffect } from "react";
 import { View } from "react-native";
-import { ActivityIndicator } from "react-native-paper";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { ActivityIndicator, PaperProvider } from "react-native-paper";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 function RouterGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -22,9 +24,9 @@ function RouterGuard({ children }: { children: React.ReactNode }) {
     const isAuthGroup = segments[0] === "auth";
 
     if (!user && !isAuthGroup && !loadingUser) {
-      router.replace("/auth");
+      // router.replace("/auth");
     } else if (user && isAuthGroup && !loadingUser) {
-      router.replace("/");
+      // router.replace("/");
     }
   }, [user, segments, router, loadingUser, rootNavigationState]);
 
@@ -41,12 +43,18 @@ function RouterGuard({ children }: { children: React.ReactNode }) {
 
 export default function RootLayout() {
   return (
-    <AuthContextProvider>
-      <RouterGuard>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        </Stack>
-      </RouterGuard>
-    </AuthContextProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AuthContextProvider>
+        <PaperProvider>
+          <SafeAreaProvider>
+            <RouterGuard>
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              </Stack>
+            </RouterGuard>
+          </SafeAreaProvider>
+        </PaperProvider>
+      </AuthContextProvider>
+    </GestureHandlerRootView>
   );
 }
