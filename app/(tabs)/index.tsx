@@ -6,7 +6,7 @@ import {
   HABIT_COMPLETIONS_COLLECTION_ID,
 } from "@/lib/appwrite";
 import { useAuth } from "@/lib/auth-context";
-import { Habit } from "@/types/database.type";
+import { Habit, HabitCompletion } from "@/types/database.type";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useEffect, useRef, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
@@ -19,7 +19,9 @@ export default function Index() {
   const swipeableRefs = useRef<{ [key: string]: Swipeable | null }>({});
 
   const [habits, setHabits] = useState<Habit[]>([]);
+  const [completedHabitIds, setCompletedHabitIds] = useState<string[]>([]);
 
+  // 获取当前用户的习惯
   const fetchHabits = async () => {
     try {
       const response = await databases.listDocuments(
@@ -32,6 +34,68 @@ export default function Index() {
       console.log("error: ", error);
     }
   };
+  // 获取当前用户，今日完成的习惯
+  const fetchTodatCompletions = async () => {
+    const tody = new Date();
+    tody.setHours(0, 0, 0, 0);
+    try {
+      const response = await databases.listDocuments(
+        DATABASES_ID,
+        HABIT_COMPLETIONS_COLLECTION_ID,
+        [
+          Query.equal("user_id", user?.$id || ""),
+          Query.greaterThan("complete_at", tody.toISOString()),
+        ]
+      );
+      const completions = response.documents as unknown as HabitCompletion[];
+      setCompletedHabitIds(completions.map((habit) => habit.habit_id));
+    } catch (error) {
+      console.log("error: ", error);
+    }
+  };
+  // 获取当前用户，今日完成的习惯
+  useEffect(() => {
+    if (!user) return;
+
+    fetchHabits();
+    fetchTodatCompletions();
+
+    // 当添加习惯后，没有重新获取的解决:
+    const chanel = `databases.${DATABASES_ID}.collections.${HABIT_COLLECTION_ID}.documents`;
+    const habitsListener = client.subscribe(chanel, (paload) => {
+      if (
+        paload.events.includes(
+          "databases.*.collections.*.documents.*.create"
+        ) ||
+        paload.events.includes(
+          "databases.*.collections.*.documents.*.update"
+        ) ||
+        paload.events.includes("databases.*.collections.*.documents.*.delete")
+      ) {
+        fetchHabits();
+      }
+
+      const completionsChannel = `databases.${DATABASES_ID}.collections.${HABIT_COMPLETIONS_COLLECTION_ID}.documents`;
+      const completionsListener = client.subscribe(
+        completionsChannel,
+        (paload) => {
+          if (
+            paload.events.includes(
+              "databases.*.collections.*.documents.*.create"
+            )
+          ) {
+            fetchTodatCompletions();
+          }
+        }
+      );
+
+      return () => {
+        habitsListener(); // 取消订阅
+        completionsListener();
+      };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const handleDelete = async (id: string) => {
     try {
@@ -42,11 +106,12 @@ export default function Index() {
   };
 
   const handleComplete = async (id: string) => {
-    if (!user) return;
+    // 用户未登录 或 当前习惯已经完成
+    if (!user || completedHabitIds.includes(id)) return;
     try {
       const currentDate = new Date().toISOString();
       // 记录 习惯 完成
-      await databases.updateDocument(
+      await databases.createDocument(
         DATABASES_ID,
         HABIT_COMPLETIONS_COLLECTION_ID,
         ID.unique(),
@@ -69,39 +134,11 @@ export default function Index() {
     }
   };
 
-  useEffect(() => {
-    if (!user) return;
-
-    fetchHabits();
-    // 当添加习惯后，没有重新获取的解决:
-    const chanel = `databases.${DATABASES_ID}.collections.${HABIT_COLLECTION_ID}.documents`;
-    const habitsListener = client.subscribe(chanel, (paload) => {
-      if (
-        paload.events.includes(
-          "databases.*.collections.*.documents.*.create"
-        ) ||
-        paload.events.includes(
-          "databases.*.collections.*.documents.*.update"
-        ) ||
-        paload.events.includes("databases.*.collections.*.documents.*.delete")
-      ) {
-        fetchHabits();
-      }
-      return () => {
-        habitsListener(); // 取消订阅
-      };
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
-
-  const RenderRightActions = () => {
+  const RenderRightActions = (habitId: string) => {
+    if (isCompletedHabit(habitId)) return null;
     return (
       <View style={style.swipeActionRight}>
-        <MaterialCommunityIcons
-          name="check-circle-outline"
-          size={32}
-          color={"#fff"}
-        />
+        <MaterialCommunityIcons name="check-circle" size={32} color={"#fff"} />
       </View>
     );
   };
@@ -116,6 +153,10 @@ export default function Index() {
         />
       </View>
     );
+  };
+
+  const isCompletedHabit = (id: string) => {
+    return completedHabitIds.includes(id);
   };
 
   return (
@@ -139,9 +180,11 @@ export default function Index() {
                 key={habit.$id}
                 overshootLeft={false}
                 overshootRight={false}
+                leftThreshold={80} // 左滑需要至少滑动 80px 才会触发
+                rightThreshold={80} // 右滑需要至少滑动 80px 才会触发
                 renderLeftActions={RenderLeftActions}
-                renderRightActions={RenderRightActions}
-                onSwipeableClose={(direction) => {
+                renderRightActions={() => RenderRightActions(habit.$id)}
+                onSwipeableOpen={(direction) => {
                   if (direction === "left") {
                     handleDelete(habit.$id);
                   } else if (direction === "right") {
@@ -150,7 +193,13 @@ export default function Index() {
                   swipeableRefs.current[habit.$id]?.close(); // 关闭 Swipeable
                 }}
               >
-                <Surface style={style.card} elevation={0}>
+                <Surface
+                  style={[
+                    style.card,
+                    isCompletedHabit(habit.$id) && style.completedCard,
+                  ]}
+                  elevation={0}
+                >
                   <View key={habit.$id} style={style.cardContent}>
                     <Text style={style.cardTitle}>{habit.title}</Text>
                     <Text style={style.cardDescription}>
@@ -216,6 +265,9 @@ const style = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 4,
+  },
+  completedCard: {
+    opacity: 0.7,
   },
   cardContent: {
     padding: 20,
