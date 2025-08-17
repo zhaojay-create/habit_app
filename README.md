@@ -1,50 +1,68 @@
-# Welcome to your Expo app 👋
+# Welcome to my Expo habit app 👋
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+一个使用 [Expo](https://expo.dev/) + [Appwrite](https://appwrite.io/) 构建的跨平台习惯养成应用.
 
-## Get started
+## 技术栈
 
-1. Install dependencies
+React Native / Expo
+Appwrite 云数据库
+React Native Paper UI 组件库
+Expo Router 路由管理
 
-   ```bash
+## 功能介绍
+
+- 用户注册/登录
+- 添加、删除习惯
+- 习惯打卡，自动统计连续天数
+- 今日习惯列表，左滑删除，右滑打卡
+- 习惯排行榜，展示最佳连续打卡记录
+- Appwrite 云端数据存储与实时同步
+
+## 项目说明
+
+1. 安装依赖
+
+```sh
    npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+2. 配置 Appwrite 云服务，填写 .env 文件中的相关参数
 
-## Learn more
+```sh
+EXPO_PUBLIC_APPWRITE_PROJECT_ID
+EXPO_PUBLIC_APPWRITE_PROJECT_NAME
+EXPO_PUBLIC_APPWRITE_ENDPOINT
 
-To learn more about developing your project with Expo, look at the following resources:
+EXPO_PUBLIC_DB_ID
+EXPO_PUBLIC_DB_HABIT_COLLECTION_ID
+EXPO_PUBLIC_DB_HABIT_COMPLETIONS_COLLECTION_ID
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+3. 启动项目
 
-## Join the community
+```sh
+npm run start
+```
 
-Join our community of developers creating universal apps.
+4. 使用 Expo Go 扫码预览，或运行 npm run ios / npm run android
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## 截图演示
+
+1. 登录/注册功能
+   ![Demo Screenshot](./assets/readme/1.pic.jpg)
+
+2. 登录后,可以查看当前用户所保存的习惯
+   ![D,mo Screenshot](./assets/readme/7.pic.jpg)
+
+3. 添加习惯
+   ![Demo Screenshot](./assets/readme/6.pic.jpg)
+   ![Demo Screenshot](./assets/readme/8.pic.jpg)
+
+4. 删除
+   ![Demo Screenshot](./assets/readme/5.pic.jpg)
+
+5. 完
+   ![Demo Screenshot](./assets/readme/4.pic.jpg)
+
+6. 查看习惯保持的排行榜
+   ![Demo Screenshot](./assets/readme/2.pic.jpg)
