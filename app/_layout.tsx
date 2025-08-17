@@ -24,9 +24,9 @@ function RouterGuard({ children }: { children: React.ReactNode }) {
     const isAuthGroup = segments[0] === "auth";
 
     if (!user && !isAuthGroup && !loadingUser) {
-      // router.replace("/auth");
+      router.replace("/auth");
     } else if (user && isAuthGroup && !loadingUser) {
-      // router.replace("/");
+      router.replace("/");
     }
   }, [user, segments, router, loadingUser, rootNavigationState]);
 
